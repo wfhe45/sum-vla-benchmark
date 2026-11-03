@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SUM-VLA & SonATA Closed-Loop Deployments</title>
+
+  <!-- Google Fonts & FontAwesome -->
+  <link href="https://fonts.googleapis.com/css?family=Noto+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      background-color: #000000;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .container {
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2.2rem;
+    }
+
+    /* Minimalist Dataset Switcher */
+    .dataset-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 0.5rem;
+    }
+
+    .tab-btn {
+      background: #0d0d0d;
+      color: #a1a1aa;
+      border: 1px solid #27272a;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-btn:hover {
+      background: #18181b;
+      color: #ffffff;
+      border-color: #3f3f46;
+    }
+
+    .tab-btn.active {
+      background: #ffffff;
+      color: #000000;
+      border-color: #ffffff;
+    }
+
+    .dataset-section {
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+
+    .dataset-section.hidden {
+      display: none;
+    }
+
+    .scenario-card {
+      background-color: #050505;
+      border: 1px solid #222222;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85);
+    }
+
+    .video-wrapper {
+      position: relative;
+      background: #000000;
+      border-bottom: 1px solid #222222;
+    }
+
+    .video-wrapper video {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .telemetry-bar {
+      display: flex;
+      align-items: center;
+      background: #0a0a0a;
+      padding: 10px 18px;
+      border-bottom: 1px solid #222222;
+      gap: 14px;
+    }
+
+    .tele-task {
+      font-size: 0.92rem;
+      color: #ffffff;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .tele-sep {
+      color: #3f3f46;
+      font-size: 0.85rem;
+    }
+
+    .tele-pill {
+      font-size: 0.92rem;
+      color: #ffffff;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: -0.01em;
+    }
+
+    .tele-pill b {
+      color: #ffffff;
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .reasoning-container {
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #050505;
+    }
+
+    .phase-block {
+      background: #0d0d0d;
+      border: 1px solid #1f1f1f;
+      border-left: 3px solid #27272a;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.84rem;
+      line-height: 1.55;
+      opacity: 0.40;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .phase-block:hover {
+      opacity: 0.75;
+      border-color: #3f3f46;
+    }
+
+    .phase-block.active {
+      background: #141416;
+      border-color: #3f3f46;
+      border-left: 4px solid #ffffff;
+      opacity: 1.0;
+      box-shadow: 0 4px 20px rgba(255, 255, 255, 0.08);
+      transform: translateX(4px);
+    }
+
+    .phase-block.active .phase-header span:first-child {
+      color: #ffffff;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
+    }
+
+    .phase-block.active .phase-time {
+      color: #ffffff;
+      background: #27272a;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .phase-block.active .phase-action {
+      color: #fafafa;
+    }
+
+    .phase-block.active .phase-reasoning {
+      color: #d4d4d8;
+    }
+
+    .phase-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+
+    .phase-time {
+      color: #a1a1aa;
+      font-size: 0.8rem;
+    }
+
+    .phase-action {
+      color: #e4e4e7;
+      font-size: 0.82rem;
+      margin-bottom: 5px;
+    }
+
+    .phase-reasoning {
+      color: #a1a1aa;
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- Dataset Switcher Tab -->
+    <div class="dataset-tabs font-mono">
+      <button id="btn-usvla" class="tab-btn active" onclick="showDataset('usvla')">
+        <i class="fas fa-stethoscope"></i> SUM-VLA Benchmark (5 Tasks)
+      </button>
+      <button id="btn-sonata" class="tab-btn" onclick="showDataset('sonata')">
+        <i class="fas fa-robot"></i> TUM SonATA Benchmark (3 Tasks)
+      </button>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SECTION 1: SUM-VLA Benchmark (5 Clinical Tasks) (5 Tasks)            -->
+    <!-- ======================================================== -->
+    <div id="section-usvla" class="dataset-section">
+
+      <!-- SUM-VLA Task 1: Abdominal Aorta Sagittal -->
+      <div class="scenario-card">
+        <div class="video-wrapper">
+          <video autoplay muted loop playsinline controls preload="metadata"
+                 poster="static/videos/usvla/usvla_task1_aorta_poster.jpg?v=final_audit">
+            <source src="static/videos/usvla/usvla_task1_aorta_wide5panel.mp4?v=final_audit" type="video/mp4">
+          </video>
+        </div>
+
+        <div class="telemetry-bar font-mono">
+          <span class="tele-task"><i class="fas fa-heartbeat" style="color: #a1a1aa;"></i> Task 1: Abdominal Aorta Sagittal</span>
+          <span class="tele-sep">|</span>
+          <span class="tele-pill"><i class="fas fa-bullseye" style="color: #ffffff;"></i> Pos Error: <b>0.466 mm</b></span>
+          <span class="tele-sep">|</span>
+          <span class="tele-pill"><i class="fas fa-shoe-prints" style="color: #ffffff;"></i> Total Steps: <b>301</b></span>
+        </div>
+
+        <div class="reasoning-container font-mono">
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 1: Epigastric Longitudinal Approach</span>
+              <span class="phase-time">[t = 1.20s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Align ultrasound transducer strictly along patient longitudinal midline in epigastric region.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Identify xiphoid process landmark and establish perpendicular acoustic window toward retroperitoneal abdominal aorta.</div>
+          </div>
+
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 2: Sagittal Vascular Axis Tracking</span>
+              <span class="phase-time">[t = 5.00s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Translate probe caudal-cranially along longitudinal vascular axis while maintaining uniform contact pressure.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Track hypoechoic pulsatile tubular aorta and distinguish anterior branches including celiac trunk and SMA.</div>
+          </div>
+
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 3: Standard Sagittal View Lock</span>
+              <span class="phase-time">[t = 9.20s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Lock 6-DoF end-effector pose perpendicular to long-axis aortic lumen.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Standard longitudinal aortic view acquired with crisp hyperechoic wall boundaries and continuous lumen patency.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUM-VLA Task 2: Subxiphoid Transverse -->
+      <div class="scenario-card">
+        <div class="video-wrapper">
+          <video autoplay muted loop playsinline controls preload="metadata"
+                 poster="static/videos/usvla/usvla_task2_subxiphoid_poster.jpg?v=final_audit">
+            <source src="static/videos/usvla/usvla_task2_subxiphoid_wide5panel.mp4?v=final_audit" type="video/mp4">
+          </video>
+        </div>
+
+        <div class="telemetry-bar font-mono">
+          <span class="tele-task"><i class="fas fa-layer-group" style="color: #a1a1aa;"></i> Task 2: Subxiphoid Transverse</span>
+          <span class="tele-sep">|</span>
+          <span class="tele-pill"><i class="fas fa-bullseye" style="color: #ffffff;"></i> Pos Error: <b>0.478 mm</b></span>
+          <span class="tele-sep">|</span>
+          <span class="tele-pill"><i class="fas fa-shoe-prints" style="color: #ffffff;"></i> Total Steps: <b>250</b></span>
+        </div>
+
+        <div class="reasoning-container font-mono">
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 1: Subxiphoid Angulation</span>
+              <span class="phase-time">[t = 1.00s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Position transducer transversely immediately inferior to xiphoid notch with slight cranial tilt.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Steer acoustic beam beneath thoracic ribcage to avoid subxiphoid bone acoustic shadowing.</div>
+          </div>
+
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 2: Hepatic Parenchyma & IVC Sweep</span>
+              <span class="phase-time">[t = 4.20s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Sweep transverse plane gently across left hepatic lobe parenchyma toward inferior vena cava (IVC).</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Differentiate homogeneous liver parenchyma echo from anechoic tubular vascular lumens.</div>
+          </div>
+
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 3: Transverse Standard Slice Lock</span>
+              <span class="phase-time">[t = 7.60s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Stabilize 6-DoF end-effector to center left hepatic lobe and cross-sectional IVC lumen.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Stable acoustic contact achieved; standard subxiphoid transverse orientation maintained without out-of-plane tilt.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUM-VLA Task 3: Right Subcostal Oblique -->
+      <div class="scenario-card">
+        <div class="video-wrapper">
+          <video autoplay muted loop playsinline controls preload="metadata"
+                 poster="static/videos/usvla/usvla_task3_subcostal_poster.jpg?v=final_audit">
+            <source src="static/videos/usvla/usvla_task3_subcostal_wide5panel.mp4?v=final_audit" type="video/mp4">
+          </video>
+        </div>
+
+        <div class="telemetry-bar font-mono">
+          <span class="tele-task"><i class="fas fa-shield-alt" style="color: #a1a1aa;"></i> Task 3: Right Subcostal Oblique</span>
+          <span class="tele-sep">|</span>
+          <span class="tele-pill"><i class="fas fa-bullseye" style="color: #ffffff;"></i> Pos Error: <b>0.556 mm</b></span>
+          <span class="tele-sep">|</span>
+          <span class="tele-pill"><i class="fas fa-shoe-prints" style="color: #ffffff;"></i> Total Steps: <b>248</b></span>
+        </div>
+
+        <div class="reasoning-container font-mono">
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 1: Subcostal Margin Positioning</span>
+              <span class="phase-time">[t = 1.00s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Place transducer parallel to right costal margin with oblique clockwise rotation.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Exploit liver acoustic window beneath right ribs while avoiding intestinal gas reverberations.</div>
+          </div>
+
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 2: Oblique Acoustic Corridor Alignment</span>
+              <span class="phase-time">[t = 4.10s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Angle acoustic beam cranio-dorsally through liver parenchyma toward gallbladder bed.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Clear rib reverberation artifacts; identify the pear-shaped anechoic gallbladder lumen and right portal vein branches.</div>
+          </div>
+
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 3: Subcostal Plane Stabilization</span>
+              <span class="phase-time">[t = 7.50s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Lock 6-DoF probe pose to capture full longitudinal axis of gallbladder within hepatic context.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> High acoustic contrast achieved between hypoechoic liver parenchyma and anechoic gallbladder fluid.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUM-VLA Task 4: Left Kidney Long-Axis -->
+      <div class="scenario-card">
+        <div class="video-wrapper">
+          <video autoplay muted loop playsinline controls preload="metadata"
+                 poster="static/videos/usvla/usvla_task4_kidney_long_poster.jpg?v=final_audit">
+            <source src="static/videos/usvla/usvla_task4_kidney_long_wide5panel.mp4?v=final_audit" type="video/mp4">
+          </video>
+        </div>
+
+        <div class="telemetry-bar font-mono">
+          <span class="tele-task"><i class="fas fa-circle-notch" style="color: #a1a1aa;"></i> Task 4: Left Kidney Long-Axis</span>
+          <span class="tele-sep">|</span>
+          <span class="tele-pill"><i class="fas fa-bullseye" style="color: #ffffff;"></i> Pos Error: <b>0.565 mm</b></span>
+          <span class="tele-sep">|</span>
+          <span class="tele-pill"><i class="fas fa-shoe-prints" style="color: #ffffff;"></i> Total Steps: <b>135</b></span>
+        </div>
+
+        <div class="reasoning-container font-mono">
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 1: Left Flank Coronal Approach</span>
+              <span class="phase-time">[t = 0.80s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Orient transducer along posterior axillary line in left coronal flank corridor.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Establish lateral retroperitoneal acoustic corridor avoiding overlying descending colon gas.</div>
+          </div>
+
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 2: Renal Cortex & Sinus Identification</span>
+              <span class="phase-time">[t = 2.40s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Rotate probe slightly counter-clockwise to match anatomical tilt of left renal long axis.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Differentiate outer hypoechoic renal cortex and central dense hyperechoic renal sinus.</div>
+          </div>
+
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 3: Bipolar Renal Axis Lock</span>
+              <span class="phase-time">[t = 4.00s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Maintain constant probe perpendicularity to maximize coronal renal length measurement.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Standard oval renal silhouette acquired with distinct upper and lower poles in continuous acoustic focus.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUM-VLA Task 5: Left Kidney Transverse Hilum -->
+      <div class="scenario-card">
+        <div class="video-wrapper">
+          <video autoplay muted loop playsinline controls preload="metadata"
+                 poster="static/videos/usvla/usvla_task5_kidney_hilum_poster.jpg?v=final_audit">
+            <source src="static/videos/usvla/usvla_task5_kidney_hilum_wide5panel.mp4?v=final_audit" type="video/mp4">
+          </video>
+        </div>
+
+        <div class="telemetry-bar font-mono">
+          <span class="tele-task"><i class="fas fa-crosshairs" style="color: #a1a1aa;"></i> Task 5: Left Kidney Transverse Hilum</span>
+          <span class="tele-sep">|</span>
+          <span class="tele-pill"><i class="fas fa-bullseye" style="color: #ffffff;"></i> Pos Error: <b>0.374 mm</b></span>
+          <span class="tele-sep">|</span>
+          <span class="tele-pill"><i class="fas fa-shoe-prints" style="color: #ffffff;"></i> Total Steps: <b>149</b></span>
+        </div>
+
+        <div class="reasoning-container font-mono">
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 1: Mid-Kidney Orthogonal Transition</span>
+              <span class="phase-time">[t = 0.80s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Rotate transducer 90 degrees orthogonal to renal long axis at mid-pole level.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Transition from bipolar coronal view into transverse cross-sectional imaging corridor.</div>
+          </div>
+
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 2: Renal Hilum C-Shape Localization</span>
+              <span class="phase-time">[t = 2.60s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Fine-tune elevation pitch to capture the medial hilum vascular indentation.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Identify characteristic C-shaped renal parenchyma opening medially into renal pelvis and vessels.</div>
+          </div>
+
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 3: Hilum Centerline Lock</span>
+              <span class="phase-time">[t = 4.40s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Lock 6-DoF end-effector with steady contact pressure on transverse hilar plane.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Maximum transverse renal diameter achieved with clear delineation of medial vascular pedicle.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SECTION 2: TUM SonATA Benchmark (3 Robotic Tasks) (3 Tasks)                 -->
+    <!-- ======================================================== -->
+    <div id="section-sonata" class="dataset-section hidden">
+
+      <!-- SonATA Task 1: Continuous Scanning -->
+      <div class="scenario-card">
+        <div class="video-wrapper">
+          <video autoplay muted loop playsinline controls preload="metadata"
+                 poster="static/videos/sonata/sonata_task1_scanning_poster.jpg?v=final_audit">
+            <source src="static/videos/sonata/sonata_task1_scanning_wide5panel.mp4?v=final_audit" type="video/mp4">
+          </video>
+        </div>
+
+        <div class="telemetry-bar font-mono">
+          <span class="tele-task"><i class="fas fa-layer-group" style="color: #a1a1aa;"></i> Task 1: Continuous Scanning</span>
+          <span class="tele-sep">|</span>
+          <span class="tele-pill"><i class="fas fa-bullseye" style="color: #ffffff;"></i> Pos Error: <b>5.397 mm</b></span>
+          <span class="tele-sep">|</span>
+          <span class="tele-pill"><i class="fas fa-shoe-prints" style="color: #ffffff;"></i> Total Steps: <b>210</b></span>
+        </div>
+
+        <div class="reasoning-container font-mono">
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 1: Subxiphoid Epigastric Approach</span>
+              <span class="phase-time">[t = 1.00s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Align probe with epigastric acoustic corridor; descend from standoff height toward abdominal phantom surface.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Position transducer along midline acoustic corridor to establish initial acoustic coupling while clearing superficial acoustic impedance.</div>
+          </div>
+
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 2: In-Plane Transverse Sweep</span>
+              <span class="phase-time">[t = 3.80s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Execute steady lateral translation along the transverse abdominal plane with constant perpendicular contact.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Maintain consistent acoustic coupling pressure; scan across the liver parenchyma to bring the anechoic abdominal aorta and inferior vena cava (IVC) into the acoustic focal zone.</div>
+          </div>
+
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 3: Vascular Bifurcation Standardization</span>
+              <span class="phase-time">[t = 6.60s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Lock 6-DoF end-effector pose perpendicular to the abdominal aorta and IVC dual-vessel transverse view.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Standard transverse abdominal vascular plane acquired with circular hypoechoic lumen borders and posterior acoustic enhancement; terminal pose maintained without elevation drift.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SonATA Task 2: Anatomical Navigation -->
+      <div class="scenario-card">
+        <div class="video-wrapper">
+          <video autoplay muted loop playsinline controls preload="metadata"
+                 poster="static/videos/sonata/sonata_task2_navigation_poster.jpg?v=final_audit">
+            <source src="static/videos/sonata/sonata_task2_navigation_wide5panel.mp4?v=final_audit" type="video/mp4">
+          </video>
+        </div>
+
+        <div class="telemetry-bar font-mono">
+          <span class="tele-task"><i class="fas fa-compass" style="color: #a1a1aa;"></i> Task 2: Anatomical Navigation</span>
+          <span class="tele-sep">|</span>
+          <span class="tele-pill"><i class="fas fa-bullseye" style="color: #ffffff;"></i> Pos Error: <b>5.094 mm</b></span>
+          <span class="tele-sep">|</span>
+          <span class="tele-pill"><i class="fas fa-shoe-prints" style="color: #ffffff;"></i> Total Steps: <b>218</b></span>
+        </div>
+
+        <div class="reasoning-container font-mono">
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 1: Right Upper Quadrant Standoff Alignment</span>
+              <span class="phase-time">[t = 1.10s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Orient probe axis toward right upper quadrant; translate along mid-clavicular line toward subcostal margin.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Target the gallbladder acoustic window beneath liver edge; navigate past overlying bowel gas regions to clear acoustic path.</div>
+          </div>
+
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 2: Intercostal Angulation & Acoustic Sweep</span>
+              <span class="phase-time">[t = 4.00s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Tilt transducer elevation angle slightly cephalad while maintaining gentle surface contact along hepatic acoustic window.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Beam steer under costal margin to eliminate rib acoustic shadowing; identify the pear-shaped anechoic lumen of the gallbladder fundus.</div>
+          </div>
+
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 3: Gallbladder Centering & Target Lock</span>
+              <span class="phase-time">[t = 6.80s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Fine-tune 6-DoF probe roll and yaw to center gallbladder lumen within the central ultrasound focal zone.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Optimal acoustic beam alignment achieved; maximum longitudinal diameter of gallbladder lumen visualized with crisp hyperechoic wall reflection.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SonATA Task 3: Precision Placement -->
+      <div class="scenario-card">
+        <div class="video-wrapper">
+          <video autoplay muted loop playsinline controls preload="metadata"
+                 poster="static/videos/sonata/sonata_task3_placement_poster.jpg?v=final_audit">
+            <source src="static/videos/sonata/sonata_task3_placement_wide5panel.mp4?v=final_audit" type="video/mp4">
+          </video>
+        </div>
+
+        <div class="telemetry-bar font-mono">
+          <span class="tele-task"><i class="fas fa-crosshairs" style="color: #a1a1aa;"></i> Task 3: Precision Placement</span>
+          <span class="tele-sep">|</span>
+          <span class="tele-pill"><i class="fas fa-bullseye" style="color: #ffffff;"></i> Pos Error: <b>3.113 mm</b></span>
+          <span class="tele-sep">|</span>
+          <span class="tele-pill"><i class="fas fa-shoe-prints" style="color: #ffffff;"></i> Total Steps: <b>394</b></span>
+        </div>
+
+        <div class="reasoning-container font-mono">
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 1: Midsagittal Corridor Descent</span>
+              <span class="phase-time">[t = 2.50s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Descend transducer vertically from standoff height along patient longitudinal midline.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Track epigastric midline surface landmarks; orient probe orientation marker cephalad for standard sagittal plane display convention.</div>
+          </div>
+
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 2: Contact Compression & Acoustic Coupling</span>
+              <span class="phase-time">[t = 7.20s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Establish conformal acoustic contact with abdominal surface; apply controlled perpendicular compression.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Displace interfacial air gaps through acoustic gel; optimize sound wave transmission across superficial fascial layers into deep abdominal structures.</div>
+          </div>
+
+          <div class="phase-block">
+            <div class="phase-header">
+              <span>Phase 3: Midline Sagittal Plane Stabilization</span>
+              <span class="phase-time">[t = 12.00s]</span>
+            </div>
+            <div class="phase-action"><b>[Action]</b> Rigidly stabilize 6-DoF probe pose in strict midsagittal orientation without rotational precession.</div>
+            <div class="phase-reasoning"><b>[Reasoning]</b> Continuous acoustic contact established; high-contrast sagittal view of midline abdominal structures and retroperitoneal planes achieved in steady state.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    function showDataset(name) {
+      const secUsvla = document.getElementById('section-usvla');
+      const secSonata = document.getElementById('section-sonata');
+      const btnUsvla = document.getElementById('btn-usvla');
+      const btnSonata = document.getElementById('btn-sonata');
+
+      if (name === 'usvla') {
+        secUsvla.classList.remove('hidden');
+        secSonata.classList.add('hidden');
+        btnUsvla.classList.add('active');
+        btnSonata.classList.remove('active');
+      } else {
+        secUsvla.classList.add('hidden');
+        secSonata.classList.remove('hidden');
+        btnSonata.classList.add('active');
+        btnUsvla.classList.remove('active');
+      }
+    }
+
+    // Video Time -> Reasoning Phase Active Highlight Sync
+    function initVideoReasoningSync() {
+      const cards = document.querySelectorAll('.scenario-card');
+      cards.forEach(card => {
+        const video = card.querySelector('video');
+        const blocks = card.querySelectorAll('.phase-block');
+        if (!video || blocks.length === 0) return;
+
+        const phases = [];
+        blocks.forEach((block) => {
+          const timeElem = block.querySelector('.phase-time');
+          let t = 0;
+          if (timeElem) {
+            const match = timeElem.textContent.match(/[\d.]+/);
+            if (match) t = parseFloat(match[0]);
+          }
+          phases.push({ block, time: t });
+
+          // Click to jump to phase timestamp
+          block.addEventListener('click', () => {
+            video.currentTime = Math.max(0, t - 0.2);
+            video.play().catch(() => {});
+          });
+        });
+
+        function updateActivePhase() {
+          const cur = video.currentTime;
+          let activeIdx = 0;
+
+          if (phases.length === 3) {
+            const t0 = phases[0].time;
+            const t1 = phases[1].time;
+            const t2 = phases[2].time;
+            const b01 = (t0 + t1) / 2;
+            const b12 = (t1 + t2) / 2;
+
+            if (cur < b01) {
+              activeIdx = 0;
+            } else if (cur < b12) {
+              activeIdx = 1;
+            } else {
+              activeIdx = 2;
+            }
+          } else {
+            for (let i = phases.length - 1; i >= 0; i--) {
+              if (cur >= phases[i].time) {
+                activeIdx = i;
+                break;
+              }
+            }
+          }
+
+          blocks.forEach((b, idx) => {
+            if (idx === activeIdx) {
+              b.classList.add('active');
+            } else {
+              b.classList.remove('active');
+            }
+          });
+        }
+
+        video.addEventListener('timeupdate', updateActivePhase);
+        video.addEventListener('seeked', updateActivePhase);
+        video.addEventListener('loadedmetadata', updateActivePhase);
+        video.addEventListener('play', updateActivePhase);
+        // Initial setup
+        updateActivePhase();
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initVideoReasoningSync);
+    } else {
+      initVideoReasoningSync();
+    }
+  </script>
+
+</body>
+</html>
